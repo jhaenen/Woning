@@ -11,5 +11,24 @@
     <StackPanel Name="stack">
         <TextBlock Name="test" HorizontalAlignment="Center"></TextBlock>
         <Button x:Name="button" Content="Haal lichten op" HorizontalAlignment="Center" Click="button_Click"/>
+        <Grid Width="300" Height="200">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Image Grid.Row="0" Grid.Column="0" Source="Images/lamp-on.svg" HorizontalAlignment="Center" VerticalAlignment="Center" RasterizePixelWidth="">
+                <Image.Source>
+                    <SvgImageSource></SvgImageSource>
+                </Image.Source>
+            </Image>
+            <TextBlock Name="txt" Grid.Row="0" Grid.Column="1" VerticalAlignment="Bottom" FontSize="20" FontWeight="Bold" Margin="0,0,0,20">Kamerlamp</TextBlock>
+            <Slider Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="10,0,10,0"/>
+        </Grid>
     </StackPanel>
 </Page>

@@ -36,18 +36,23 @@ namespace Woning {
                 return;
             }
             foreach(dynamic entry in lamps.result) {
-                stack.Children.Add(createEntry(entry.Name.ToString()));
+                if (entry.Type == "Light/Switch" || entry.Type == "Color Switch") {
+                    TextBlock panel = await createEntry((int)entry.idx);
+                    stack.Children.Add(panel);
+                }
             }
         }
 
-        private StackPanel createEntry(string name) {
+        private async Task<TextBlock> createEntry(int idx) {
             TextBlock txt = new TextBlock();
             txt.HorizontalAlignment = HorizontalAlignment.Center;
-            txt.Text = name;
 
-            StackPanel stackPanel = new StackPanel();
-            stackPanel.Children.Add(txt);
-            return stackPanel;
+            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + idx.ToString()); 
+            dynamic json = JsonConvert.DeserializeObject(response);
+            dynamic lamp = json.result[0];
+            txt.Text = idx + ": " + lamp.Name + "(" + lamp.Data + ")";
+
+            return txt;
         }
 
         private async Task<string> GetAsync(string uri) {

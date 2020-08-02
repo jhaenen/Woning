@@ -8,20 +8,8 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <StackPanel HorizontalAlignment = "Center">
-        <TextBlock Text = "Hello, world!"  Margin = "20"  Width = "200" 
-            HorizontalAlignment = "Left"/>
-
-        <TextBlock Text = "Write your name." Margin = "20" Width = "200" 
-            HorizontalAlignment = "Left"/>
-
-        <TextBox x:Name = "txtbox"  Width = "280" Margin = "20" 
-            HorizontalAlignment = "Left"/>
-
-        <Button x:Name = "button" Content = "Click Me" Margin = "20" 
-            Click = "button_Click"/>
-
-        <TextBlock x:Name = "txtblock" HorizontalAlignment = "Left" 
-            Margin = "20"/>
+    <StackPanel Name="stack">
+        <TextBlock Name="test" HorizontalAlignment="Center"></TextBlock>
+        <Button x:Name="button" Content="Haal lichten op" HorizontalAlignment="Center" Click="button_Click"/>
     </StackPanel>
 </Page>

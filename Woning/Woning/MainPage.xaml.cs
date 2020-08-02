@@ -1,8 +1,12 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -24,9 +28,39 @@ namespace Woning {
             this.InitializeComponent();
         }
 
-        private void button_Click(object sender, RoutedEventArgs e) {
-            if (txtbox.Text != "") txtblock.Text = "Hello, " + txtbox.Text;
-            else txtblock.Text = "You have not written a name...";
+        private async void button_Click(object sender, RoutedEventArgs e) {
+            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=command&param=getlightswitches");
+            dynamic lamps = JsonConvert.DeserializeObject(response);
+            if (lamps.status != "OK") {
+                test.Text = "Error";
+                return;
+            }
+            foreach(dynamic entry in lamps.result) {
+                stack.Children.Add(createEntry(entry.Name.ToString()));
+            }
+        }
+
+        private StackPanel createEntry(string name) {
+            TextBlock txt = new TextBlock();
+            txt.HorizontalAlignment = HorizontalAlignment.Center;
+            txt.Text = name;
+
+            StackPanel stackPanel = new StackPanel();
+            stackPanel.Children.Add(txt);
+            return stackPanel;
+        }
+
+        private async Task<string> GetAsync(string uri) {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+            using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
+            using (Stream stream = response.GetResponseStream())
+            using (StreamReader reader = new StreamReader(stream)) {
+                return await reader.ReadToEndAsync();
+            }
         }
     }
+
+    
 }

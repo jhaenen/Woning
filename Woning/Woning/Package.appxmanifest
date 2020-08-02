@@ -7,15 +7,15 @@
   IgnorableNamespaces="uap mp">
 
   <Identity
-    Name="d29c8ba5-6997-4ad2-bdf1-2d21773c60a3"
-    Publisher="CN=jaspe"
+    Name="a7df935b-311f-44ab-8f20-b66ee5f55cc6"
+    Publisher="CN=Jasper"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="d29c8ba5-6997-4ad2-bdf1-2d21773c60a3" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="a7df935b-311f-44ab-8f20-b66ee5f55cc6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Woning</DisplayName>
-    <PublisherDisplayName>jaspe</PublisherDisplayName>
+    <PublisherDisplayName>Jasper</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 

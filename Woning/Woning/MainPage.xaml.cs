@@ -37,20 +37,27 @@ namespace Woning {
             }
             foreach(dynamic entry in lamps.result) {
                 if (entry.Type == "Light/Switch" || entry.Type == "Color Switch") {
-                    TextBlock panel = await createEntry((int)entry.idx);
-                    stack.Children.Add(panel);
+                    TextBlock panel = await createEntry((uint)entry.idx);
+                    if(panel != null) stack.Children.Add(panel);
                 }
             }
         }
 
-        private async Task<TextBlock> createEntry(int idx) {
+        private async Task<TextBlock> createEntry(uint idx) {
+            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + idx.ToString());
+            dynamic json = JsonConvert.DeserializeObject(response);
+            dynamic lampData = json.result[0];
+
+            if (lampData.SwitchType != "On/Off" && lampData.SwitchType != "Dimmer") return null;
+
+            DimmableLamp lamp = new DimmableLamp(idx, lampData.Name.ToString());
+            lamp.Switch(false);
+
             TextBlock txt = new TextBlock();
             txt.HorizontalAlignment = HorizontalAlignment.Center;
 
-            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + idx.ToString()); 
-            dynamic json = JsonConvert.DeserializeObject(response);
-            dynamic lamp = json.result[0];
-            txt.Text = idx + ": " + lamp.Name + "(" + lamp.Data + ")";
+            
+            txt.Text = idx + ": " + lampData.Name + "(" + lampData.Status + ")";
 
             return txt;
         }

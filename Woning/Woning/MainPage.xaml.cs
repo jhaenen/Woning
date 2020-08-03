@@ -9,8 +9,10 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using System.Timers;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -23,16 +25,16 @@ namespace Woning {
     public sealed partial class MainPage : Page {
 
         ObservableCollection<Lamp> LampCollection { get; set; } = new ObservableCollection<Lamp>();
+        Timer timer = new Timer();
 
         public MainPage() {
             this.InitializeComponent();
-        }
 
-        private void button_Click(object sender, RoutedEventArgs e) {
             GetLamps();
-            foreach (Lamp lamp in LampCollection) {
-                Debug.WriteLine(lamp.Name);
-            }
+
+            
+            timer.Elapsed += new ElapsedEventHandler(UpdateLamps);
+            timer.Interval = 1000;
         }
 
         private async void GetLamps() {
@@ -46,12 +48,24 @@ namespace Woning {
                         dynamic lampData = json.result[0];
 
                         if (lampData.SwitchType == "On/Off")
-                            LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString()));
+                            LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), false, false));
                         else if(lampData.SwitchType == "Dimmer") {
-                            if (lampData.Type == "Light/Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), true));
-                            if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), true, true));
+                            if (lampData.Type == "Light/Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true, false));
+                            if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true, true));
                         }
                     }
+                }
+            }
+
+            timer.Enabled = true;
+        }
+
+        private async void UpdateLamps(object source, ElapsedEventArgs e) {
+            foreach(Lamp lamp in LampCollection) { 
+                string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + lamp.IDX.ToString());
+                dynamic json = JsonConvert.DeserializeObject(response);
+                if (json.status == "OK") {
+                    lamp.SetStatus(json.result[0].Status.ToString());
                 }
             }
         }

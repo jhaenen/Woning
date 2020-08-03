@@ -2,6 +2,8 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -17,49 +19,41 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
-// The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
-
 namespace Woning {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainPage : Page {
+
+        ObservableCollection<Lamp> LampCollection { get; set; } = new ObservableCollection<Lamp>();
+
         public MainPage() {
             this.InitializeComponent();
         }
 
-        private async void button_Click(object sender, RoutedEventArgs e) {
-            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=command&param=getlightswitches");
-            dynamic lamps = JsonConvert.DeserializeObject(response);
-            if (lamps.status != "OK") {
-                test.Text = "Error";
-                return;
-            }
-            foreach(dynamic entry in lamps.result) {
-                if (entry.Type == "Light/Switch" || entry.Type == "Color Switch") {
-                    TextBlock panel = await createEntry((uint)entry.idx);
-                    if(panel != null) stack.Children.Add(panel);
-                }
+        private void button_Click(object sender, RoutedEventArgs e) {
+            GetLamps();
+            foreach (Lamp lamp in LampCollection) {
+                Debug.WriteLine(lamp.Name);
             }
         }
 
-        private async Task<TextBlock> createEntry(uint idx) {
-            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + idx.ToString());
-            dynamic json = JsonConvert.DeserializeObject(response);
-            dynamic lampData = json.result[0];
+        private async void GetLamps() {
+            string response = await GetAsync(@"http://192.168.2.210/json.htm?type=command&param=getlightswitches");
+            dynamic lamps = JsonConvert.DeserializeObject(response);
+            if (lamps.status == "OK") {
+                foreach (dynamic entry in lamps.result) {
+                    if (entry.Type == "Light/Switch" || entry.Type == "Color Switch") {
+                        response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + entry.idx.ToString());
+                        dynamic json = JsonConvert.DeserializeObject(response);
+                        dynamic lampData = json.result[0];
 
-            if (lampData.SwitchType != "On/Off" && lampData.SwitchType != "Dimmer") return null;
-
-            DimmableLamp lamp = new DimmableLamp(idx, lampData.Name.ToString());
-            lamp.Switch(false);
-
-            TextBlock txt = new TextBlock();
-            txt.HorizontalAlignment = HorizontalAlignment.Center;
-
-            
-            txt.Text = idx + ": " + lampData.Name + "(" + lampData.Status + ")";
-
-            return txt;
+                        if (lampData.SwitchType == "On/Off")
+                            LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString()));
+                        else if(lampData.SwitchType == "Dimmer") {
+                            if (lampData.Type == "Light/Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), true));
+                            if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), true, true));
+                        }
+                    }
+                }
+            }
         }
 
         private async Task<string> GetAsync(string uri) {

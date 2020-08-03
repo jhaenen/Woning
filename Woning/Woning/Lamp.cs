@@ -4,39 +4,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Woning
-{
+namespace Woning {    
     class Lamp {
-        private uint _idx;
-        private string _name;
-        private bool _status;
+        public uint IDX { get; internal set; }
+        public string Name { get; internal set; }
+        public bool Status { get; set; }
 
-        public Lamp(uint idx, string name) { _idx = idx; _name = name; }
-        public void Switch(bool status) { _status = status; }
-    }
+        public bool Dimmable { get; internal set; }
+        public bool ColorLamp { get; internal set; }
+        public uint Brightness { get; set; }
+        public float[] Color { get; set; }
 
-    class DimmableLamp : Lamp {
-        private uint _idx;
-        private string _name;
-        private bool _status;
+        public Lamp(uint idx, string name) { IDX = idx; Name = name; Color = new float[3]; Dimmable = false; ColorLamp = false; }
+        public Lamp(uint idx, string name, bool dimmable) { IDX = idx; Name = name; Color = new float[3]; Dimmable = dimmable; ColorLamp = false; }
+        public Lamp(uint idx, string name, bool dimmable, bool colorLamp) { IDX = idx; Name = name; Color = new float[3]; Dimmable = dimmable; ColorLamp = colorLamp; }
 
-        private uint _brightness;
-
-        public DimmableLamp(uint idx, string name) : base(idx, name) { _idx = idx; _name = name; }
-
-        public void SetBrightness(uint brightness) { _brightness = brightness; }
-    }
-    
-    class ColorLamp : DimmableLamp {
-        private uint _idx;
-        private string _name;
-        private bool _status;
-
-        private uint _brightness;
-        private float[] _color;
-
-        public ColorLamp(uint idx, string name) : base(idx, name) { _idx = idx; _name = name; _color = new float[3]; }
-
-        public void SetColor(float r, float g, float b) { _color[0] = r; _color[1] = g; _color[2] = b; }
+        public void SetColor(float r, float g, float b) { if (ColorLamp) { Color[0] = r; Color[1] = g; Color[2] = b; } }
     }
 }

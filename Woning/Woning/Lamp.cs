@@ -80,32 +80,15 @@ namespace Woning {
         }
         public void SetColor(float r, float g, float b) { if (ColorLamp) { Color[0] = r; Color[1] = g; Color[2] = b; } }
 
-        public void SetStatus(string status) {
-            if (status == "Off") {
-                if (Status) {
-                    ImageUri = "Images/lamp-off.svg";
-                    Status = false;
-                    if (Dimmable) Brightness = 0;
-                    Debug.WriteLine(Name + "(" + IDX + ") has turned off");
-                    NotifyPropertyChanged();
-                }
+        public void SetStatus(uint status, uint brightness) {
+            if(status == 0) {
+                Brightness = 0;
+                Status = false;
+                ImageUri = "Images/lamp-off.svg";
             } else {
-                if (Dimmable) {
-                    uint _tmpBright = uint.Parse(Regex.Match(status, @"\d+").Value, NumberFormatInfo.InvariantInfo);
-                    if(!Status || Brightness != _tmpBright) {
-                        ImageUri = "Images/lamp-on.svg";
-                        Status = true;
-                        Brightness = _tmpBright;
-                        Debug.WriteLine(Name + "(" + IDX + ") has turned on or changed brighntess");
-                        NotifyPropertyChanged();
-                    }
-                } else {
-                    if (!Status) {
-                        ImageUri = "Images/lamp-on.svg";
-                        Status = true;
-                        Debug.WriteLine(Name + "(" + IDX + ") has turned on");
-                    }
-                }
+                Brightness = brightness;
+                Status = true;
+                ImageUri = "Images/lamp-on.svg";
             }
         }
     }

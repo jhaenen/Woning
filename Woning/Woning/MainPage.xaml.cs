@@ -1,4 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Client.Options;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using Windows.Foundation;
@@ -25,15 +29,49 @@ namespace Woning {
     public sealed partial class MainPage : Page {
 
         ObservableCollection<Lamp> LampCollection { get; set; } = new ObservableCollection<Lamp>();
-        DispatcherTimer timer = new DispatcherTimer();
+
+        IMqttClient mqttClient;
+
+        private const string DomoticzUrl = "192.168.2.210";
 
         public MainPage() {
             this.InitializeComponent();
 
             GetLamps();
-            
-            timer.Interval = TimeSpan.FromMilliseconds(500);
-            timer.Tick += new EventHandler<object>(UpdateLamps);
+
+            var factory = new MqttFactory();
+            mqttClient = factory.CreateMqttClient();
+
+            var options = new MqttClientOptionsBuilder()
+                .WithTcpServer(DomoticzUrl, 1883)
+                .Build();
+
+            System.Threading.CancellationToken cancellationToken;
+            mqttClient.ConnectAsync(options, cancellationToken);
+
+            mqttClient.UseConnectedHandler(async e =>
+            {
+                Debug.WriteLine("### CONNECTED WITH SERVER ###");
+
+                MqttTopicFilter topicFilter = new MqttTopicFilter();
+                topicFilter.Topic = "domoticz/out";
+
+                await mqttClient.SubscribeAsync(topicFilter);
+
+                Debug.WriteLine("### SUBSCRIBED ###");
+            });
+
+            mqttClient.UseApplicationMessageReceivedHandler(async e => {
+                dynamic json = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
+                Lamp lamp = LampCollection.FirstOrDefault(lc => lc.IDX == (uint)json.idx);
+                if (lamp != null) {
+                    Debug.WriteLine($"{lamp.Name} has updated! NValue: {json.nvalue}, SValue: {json.svalue1}");
+                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                    () => {
+                        lamp.SetStatus((uint)json.nvalue, (uint)json.svalue1);
+                    });
+                }
+            });
         }
 
         private async void GetLamps() {
@@ -53,18 +91,6 @@ namespace Woning {
                             if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true, true));
                         }
                     }
-                }
-            }
-
-            timer.Start();
-        }
-
-        private async void UpdateLamps(object sender, object e) {
-            foreach (Lamp lamp in LampCollection) {
-                string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + lamp.IDX.ToString());
-                dynamic json = JsonConvert.DeserializeObject(response);
-                if (json.status == "OK") {
-                    lamp.SetStatus(json.result[0].Status.ToString());
                 }
             }
         }

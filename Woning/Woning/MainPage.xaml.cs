@@ -65,7 +65,6 @@ namespace Woning {
             mqttClient.UseApplicationMessageReceivedHandler(async e => {
                 dynamic json = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(e.ApplicationMessage.Payload));
                 Lamp lamp = LampCollection.FirstOrDefault(lc => lc.IDX == (uint)json.idx);
-                Debug.WriteLine($"{json.idx} has updated");
                 if (lamp != null) {
                     Debug.WriteLine($"{lamp.Name} has updated! NValue: {json.nvalue}, SValue: {json.svalue1}");
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,

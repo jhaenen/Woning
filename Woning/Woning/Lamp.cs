@@ -10,19 +10,19 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Windows.UI;
 using Windows.UI.Input;
+using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Input;
 
 namespace Woning {
     class Lamp : INotifyPropertyChanged {
-        private bool status { get; set; }
-        private uint brightness { get; set; }
-        private string imguri { get; set; }
-
         public uint IDX { get; internal set; }
         public string Name { get; internal set; }
+
+        private string imguri { get; set; }
         public string ImageUri {
             get {
                 return imguri;
@@ -35,6 +35,7 @@ namespace Woning {
 
         public bool Dimmable { get; internal set; }
         public bool ColorLamp { get; internal set; }
+        private bool status { get; set; }
         public bool Status {
             get {
                 return status;
@@ -44,6 +45,7 @@ namespace Woning {
                 NotifyPropertyChanged();
             }
         }
+        private uint brightness { get; set; }
         public uint Brightness {
             get {
                 return brightness;
@@ -53,12 +55,21 @@ namespace Woning {
                 NotifyPropertyChanged();
             }
         }
-        public float[] Color { get; set; }
+        private Color color { get; set; }
+        public Color Color { 
+            get {
+                return color;
+            }
+            set {
+                color = value;
+                NotifyPropertyChanged();
+            }
+        }
 
         public Lamp(uint idx, string name, string status, bool dimmable, bool colorLamp) {
             IDX = idx;
             Name = name;
-            Color = new float[3];
+            //Color = new float[3];
             Dimmable = dimmable;
             ColorLamp = colorLamp;
             if (status == "Off") {
@@ -109,7 +120,7 @@ namespace Woning {
                 }
             }
         }
-        public void SetColor(float r, float g, float b) { if (ColorLamp) { Color[0] = r; Color[1] = g; Color[2] = b; } }
+        //public void SetColor(float r, float g, float b) { if (ColorLamp) { Color[0] = r; Color[1] = g; Color[2] = b; } }
 
         public void SetStatus(uint status, uint brightness) {
             if(status == 0) {
@@ -125,6 +136,16 @@ namespace Woning {
                     ImageUri = "Images/lamp-on.svg";
                 }
             }
+        }
+
+        public void SetColor(ColorPicker sender, ColorChangedEventArgs args) {
+            Color = args.NewColor;
+        }
+
+        public async void UpdateColor(object sender, RoutedEventArgs e) {
+            string hex = Color.ToString().Substring(3, 6);
+            Debug.WriteLine(hex);
+            await GetAsync($"http://192.168.2.210/json.htm?type=command&param=setcolbrightnessvalue&idx={IDX}&hex={hex}&brightness={Brightness}&iswhite=false");
         }
 
         public async void SetBrightnessSlide(object sender, ManipulationCompletedRoutedEventArgs e) {

@@ -10,6 +10,10 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Windows.UI.Input;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Input;
 
 namespace Woning {
     class Lamp : INotifyPropertyChanged {
@@ -88,19 +92,19 @@ namespace Woning {
 
         public async void Switch() {
             if (Status) {
-                ImageUri = "Images/lamp-off.svg";
                 Status = false;
-                if (Dimmable) {
-                    Brightness = 0;
-                }
+                ImageUri = "Images/lamp-off.svg";
+                if (Dimmable) Brightness = 0;
                 await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Off");
             } else {
-                ImageUri = "Images/lamp-on.svg";
-                Status = true;
                 if (Dimmable) {
                     Brightness = 100;
+                    Status = true;
+                    ImageUri = "Images/lamp-on.svg";
                     await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level=100");
                 } else {
+                    Status = true;
+                    ImageUri = "Images/lamp-on.svg";
                     await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=On");
                 }
             }
@@ -109,14 +113,52 @@ namespace Woning {
 
         public void SetStatus(uint status, uint brightness) {
             if(status == 0) {
-                Brightness = 0;
-                Status = false;
-                ImageUri = "Images/lamp-off.svg";
+                if (Status) {
+                    if (Dimmable) Brightness = 0;
+                    Status = false;
+                    ImageUri = "Images/lamp-off.svg";
+                }
             } else {
-                Brightness = brightness;
-                Status = true;
-                ImageUri = "Images/lamp-on.svg";
+                if (!Status || Brightness != brightness) {
+                    if (Dimmable) Brightness = brightness;
+                    Status = true;
+                    ImageUri = "Images/lamp-on.svg";
+                }
             }
+        }
+
+        public async void SetBrightnessSlide(object sender, ManipulationCompletedRoutedEventArgs e) {
+            Slider slider = sender as Slider;
+            if (slider.Value == 0) {
+                if (Status) {
+                    Status = false;
+                    ImageUri = "Images/lamp-off.svg";
+                }
+            } else {
+                if (!Status) {
+                    Status = true;
+                    ImageUri = "Images/lamp-on.svg";
+                }
+            }
+            Brightness = (uint)slider.Value;
+            await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level={(uint)slider.Value}");
+        }
+
+        public async void SetBrightnessTapped(object sender, TappedRoutedEventArgs e) {
+            Slider slider = sender as Slider;
+            if (slider.Value == 0) {
+                if (Status) {
+                    Status = false;
+                    ImageUri = "Images/lamp-off.svg";
+                }
+            } else {
+                if (!Status) {
+                    Status = true;
+                    ImageUri = "Images/lamp-on.svg";
+                }
+            }
+            Brightness = (uint)slider.Value;
+            await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level={(uint)slider.Value}");
         }
     }
 }

@@ -26,6 +26,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 namespace Woning {
+    
     public sealed partial class MainPage : Page {
 
         ObservableCollection<Lamp> LampCollection { get; set; } = new ObservableCollection<Lamp>();
@@ -95,7 +96,7 @@ namespace Woning {
             }
         }
 
-        private async Task<string> GetAsync(string uri) {
+        public static async Task<string> GetAsync(string uri) {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
             request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
 
@@ -104,6 +105,12 @@ namespace Woning {
             using (StreamReader reader = new StreamReader(stream)) {
                 return await reader.ReadToEndAsync();
             }
+        }
+
+
+        private void Lamp_Click(object sender, ItemClickEventArgs e) {
+            Lamp lamp = e.ClickedItem as Lamp;
+            lamp.Switch();
         }
     }
 

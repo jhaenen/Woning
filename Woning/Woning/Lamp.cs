@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -73,10 +75,35 @@ namespace Woning {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public void Switch(bool status) {
-            Status = status;
-            if(status) ImageUri = "Images/lamp-on.svg";
-            else ImageUri = "Images/lamp-off.svg";
+        private static async Task<string> GetAsync(string uri) {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+            request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+            using (HttpWebResponse response = (HttpWebResponse)await request.GetResponseAsync())
+            using (Stream stream = response.GetResponseStream())
+            using (StreamReader reader = new StreamReader(stream)) {
+                return await reader.ReadToEndAsync();
+            }
+        }
+
+        public async void Switch() {
+            if (Status) {
+                ImageUri = "Images/lamp-off.svg";
+                Status = false;
+                if (Dimmable) {
+                    Brightness = 0;
+                }
+                await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Off");
+            } else {
+                ImageUri = "Images/lamp-on.svg";
+                Status = true;
+                if (Dimmable) {
+                    Brightness = 100;
+                    await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level=100");
+                } else {
+                    await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=On");
+                }
+            }
         }
         public void SetColor(float r, float g, float b) { if (ColorLamp) { Color[0] = r; Color[1] = g; Color[2] = b; } }
 

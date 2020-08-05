@@ -10,7 +10,7 @@
 
     <StackPanel Name="stack" Margin="10">
         <TextBlock FontWeight="Bold" FontSize="40" Margin="40 0">Lampen</TextBlock>
-        <GridView ItemsSource="{x:Bind LampCollection}" Margin="10 0" HorizontalAlignment="Center">
+        <GridView ItemsSource="{x:Bind LampCollection}" Margin="10 0" HorizontalAlignment="Center" ItemClick="Lamp_Click" IsItemClickEnabled="True">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:Lamp">
                     <Border BorderBrush="#555555" BorderThickness="1" CornerRadius="8" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10" >

@@ -25,16 +25,15 @@ namespace Woning {
     public sealed partial class MainPage : Page {
 
         ObservableCollection<Lamp> LampCollection { get; set; } = new ObservableCollection<Lamp>();
-        Timer timer = new Timer();
+        DispatcherTimer timer = new DispatcherTimer();
 
         public MainPage() {
             this.InitializeComponent();
 
             GetLamps();
-
             
-            timer.Elapsed += new ElapsedEventHandler(UpdateLamps);
-            timer.Interval = 1000;
+            timer.Interval = TimeSpan.FromMilliseconds(500);
+            timer.Tick += new EventHandler<object>(UpdateLamps);
         }
 
         private async void GetLamps() {
@@ -57,11 +56,11 @@ namespace Woning {
                 }
             }
 
-            timer.Enabled = true;
+            timer.Start();
         }
 
-        private async void UpdateLamps(object source, ElapsedEventArgs e) {
-            foreach(Lamp lamp in LampCollection) { 
+        private async void UpdateLamps(object sender, object e) {
+            foreach (Lamp lamp in LampCollection) {
                 string response = await GetAsync(@"http://192.168.2.210/json.htm?type=devices&rid=" + lamp.IDX.ToString());
                 dynamic json = JsonConvert.DeserializeObject(response);
                 if (json.status == "OK") {

@@ -10,15 +10,43 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Woning {
-    class Lamp {
+    class Lamp : INotifyPropertyChanged {
+        private bool status { get; set; }
+        private uint brightness { get; set; }
+        private string imguri { get; set; }
+
         public uint IDX { get; internal set; }
         public string Name { get; internal set; }
-        public bool Status { get; internal set; }
-        public string ImageUri { get; internal set; }
+        public string ImageUri {
+            get {
+                return imguri;
+            }
+            set {
+                imguri = value;
+                NotifyPropertyChanged();
+            }
+        }
 
         public bool Dimmable { get; internal set; }
         public bool ColorLamp { get; internal set; }
-        public uint Brightness { get; set; }
+        public bool Status {
+            get {
+                return status;
+            }
+            set {
+                status = value;
+                NotifyPropertyChanged();
+            }
+        }
+        public uint Brightness {
+            get {
+                return brightness;
+            }
+            set {
+                brightness = value;
+                NotifyPropertyChanged();
+            }
+        }
         public float[] Color { get; set; }
 
         public Lamp(uint idx, string name, string status, bool dimmable, bool colorLamp) {
@@ -40,6 +68,11 @@ namespace Woning {
             }
         }
 
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "") {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public void Switch(bool status) {
             Status = status;
             if(status) ImageUri = "Images/lamp-on.svg";
@@ -53,7 +86,8 @@ namespace Woning {
                     ImageUri = "Images/lamp-off.svg";
                     Status = false;
                     if (Dimmable) Brightness = 0;
-                    Debug.WriteLine(IDX + " has turned off");
+                    Debug.WriteLine(Name + "(" + IDX + ") has turned off");
+                    NotifyPropertyChanged();
                 }
             } else {
                 if (Dimmable) {
@@ -62,13 +96,14 @@ namespace Woning {
                         ImageUri = "Images/lamp-on.svg";
                         Status = true;
                         Brightness = _tmpBright;
-                        Debug.WriteLine(IDX + " has turned on or changed brighntess");
+                        Debug.WriteLine(Name + "(" + IDX + ") has turned on or changed brighntess");
+                        NotifyPropertyChanged();
                     }
                 } else {
                     if (!Status) {
                         ImageUri = "Images/lamp-on.svg";
                         Status = true;
-                        Debug.WriteLine(IDX + " has turned on");
+                        Debug.WriteLine(Name + "(" + IDX + ") has turned on");
                     }
                 }
             }

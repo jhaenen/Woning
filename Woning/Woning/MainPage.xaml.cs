@@ -89,7 +89,7 @@ namespace Woning {
                             LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), false, false));
                         else if(lampData.SwitchType == "Dimmer") {
                             if (lampData.Type == "Light/Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true, false));
-                            if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true, true));
+                            if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), lampData.Color.ToString()));
                         }
                     }
                 }

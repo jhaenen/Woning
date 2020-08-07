@@ -50,16 +50,10 @@ namespace Woning {
             System.Threading.CancellationToken cancellationToken;
             mqttClient.ConnectAsync(options, cancellationToken);
 
-            mqttClient.UseConnectedHandler(async e =>
-            {
-                Debug.WriteLine("### CONNECTED WITH SERVER ###");
-
+            mqttClient.UseConnectedHandler(async e => {
                 MqttTopicFilter topicFilter = new MqttTopicFilter();
                 topicFilter.Topic = "domoticz/out";
-
                 await mqttClient.SubscribeAsync(topicFilter);
-
-                Debug.WriteLine("### SUBSCRIBED ###");
             });
 
             mqttClient.UseApplicationMessageReceivedHandler(async e => {
@@ -69,7 +63,10 @@ namespace Woning {
                     Debug.WriteLine($"{lamp.Name} has updated! NValue: {json.nvalue}, SValue: {json.svalue1}");
                     await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
                     () => {
-                        lamp.SetStatus((uint)json.nvalue, (uint)json.svalue1);
+                        if (lamp.Dimmable) {
+                            if (lamp.ColorLamp) lamp.SetStatus((uint)json.nvalue, (uint)json.svalue1, (byte)json.Color.r, (byte)json.Color.g, (byte)json.Color.b);
+                            else lamp.SetStatus((uint)json.nvalue, (uint)json.svalue1);
+                        } else lamp.SetStatus((uint)json.nvalue);
                     });
                 }
             });
@@ -86,9 +83,9 @@ namespace Woning {
                         dynamic lampData = json.result[0];
 
                         if (lampData.SwitchType == "On/Off")
-                            LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), false, false));
+                            LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), false));
                         else if(lampData.SwitchType == "Dimmer") {
-                            if (lampData.Type == "Light/Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true, false));
+                            if (lampData.Type == "Light/Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), true));
                             if (lampData.Type == "Color Switch") LampCollection.Add(new Lamp((uint)entry.idx, entry.Name.ToString(), lampData.Status.ToString(), lampData.Color.ToString()));
                         }
                     }

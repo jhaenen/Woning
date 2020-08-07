@@ -43,13 +43,13 @@
                                         </Flyout.FlyoutPresenterStyle>
                                         <StackPanel>
                                             <Viewbox MaxWidth="150" Margin="10">
-                                                <ColorPicker IsColorChannelTextInputVisible="False" IsHexInputVisible="False" IsColorSliderVisible="False" IsColorPreviewVisible="False" ManipulationMode="All" ManipulationCompleted="{x:Bind UpdateColor}" ColorChanged="{x:Bind SetColor}"/>
+                                                <ColorPicker ColorSpectrumShape="Ring" IsColorChannelTextInputVisible="False" IsHexInputVisible="False" IsColorSliderVisible="False" IsColorPreviewVisible="False" ColorChanged="{x:Bind SetColor}"/>
                                             </Viewbox>
                                         </StackPanel>
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>
-                            <Slider Visibility="{x:Bind Dimmable}"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Minimum="0" Maximum="100"  Margin="10,0,10,0" Value="{x:Bind Brightness, Mode=OneWay}" ManipulationCompleted="{x:Bind SetBrightnessSlide}" ValueChanged="{x:Bind SetBrightnessTapped}" ManipulationMode="All"/>
+                            <Slider Visibility="{x:Bind Dimmable}"  Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" Minimum="0" Maximum="100"  Margin="10,0,10,0" Value="{x:Bind Brightness, Mode=OneWay}" ValueChanged="{x:Bind SetBrightnessSlide}"/>
                         </Grid>
                     </Border>
                 </DataTemplate>

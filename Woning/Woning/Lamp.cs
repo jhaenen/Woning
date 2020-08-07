@@ -38,6 +38,7 @@ namespace Woning {
         public bool Dimmable { get; internal set; }
         public bool ColorLamp { get; internal set; }
         private bool status { get; set; }
+
         public bool Status {
             get {
                 return status;
@@ -74,12 +75,39 @@ namespace Woning {
             }
         }
 
-        public Lamp(uint idx, string name, string status, bool dimmable, bool colorLamp) {
+        enum ChangeMode { none, colorMode, brighnessMode, switchMode }
+        ChangeMode changeMode = ChangeMode.none;
+        DispatcherTimer changeTimer = new DispatcherTimer();
+
+        private async void changeTimer_Tick(object sender, object e) {
+            Debug.WriteLine("Tick");
+            if(changeMode == ChangeMode.colorMode) {
+                string hex = LampColor.ToString().Substring(3, 6);
+                if (Brightness == 0) {
+                    if(!Status) Status = true;
+                    Brightness = 100;
+                }
+                await GetAsync($"http://192.168.2.210/json.htm?type=command&param=setcolbrightnessvalue&idx={IDX}&hex={hex}&brightness={Brightness}&iswhite=false");
+            } else if(changeMode == ChangeMode.brighnessMode) {
+                if (Brightness == 0) {
+                    if (Status) Status = false;
+                } else {
+                    if (!Status) Status = true;
+                }
+                if (!ColorLamp) await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level={Brightness}");
+                else {
+                    string hex = LampColor.ToString().Substring(3, 6);
+                    await GetAsync($"http://192.168.2.210/json.htm?type=command&param=setcolbrightnessvalue&idx={IDX}&hex={hex}&brightness={Brightness}&iswhite=false");
+                }
+            }
+            changeMode = ChangeMode.none;
+            changeTimer.Stop();
+        }
+
+        public Lamp(uint idx, string name, string status, bool dimmable) {
             IDX = idx;
             Name = name;
-            //Color = new float[3];
             Dimmable = dimmable;
-            ColorLamp = colorLamp;
             if (status == "Off") {
                 Status = false;
             } else {
@@ -89,21 +117,31 @@ namespace Woning {
                     Brightness = uint.Parse(Regex.Match(status, @"\d+").Value, NumberFormatInfo.InvariantInfo);
                 }
             }
+
+            changeTimer.Interval = TimeSpan.FromMilliseconds(200);
+            changeTimer.Tick += changeTimer_Tick;
         }
 
         public Lamp(uint idx, string name, string status, string colorStr) {
             IDX = idx;
             Name = name;
             Dimmable = true;
-            ColorLamp = true;
             dynamic json = JsonConvert.DeserializeObject(colorStr);
-            LampColor = Color.FromArgb(255, (byte)json.r, (byte)json.g, (byte)json.b);
+            if (json.r == 0 && json.g == 0 && json.b == 0) {
+                ColorLamp = false;
+            } else {
+                ColorLamp = true;
+                LampColor = Color.FromArgb(255, (byte)json.r, (byte)json.g, (byte)json.b);
+            }
             if (status == "Off") {
                 Status = false;
             } else {
                 Status = true;
                 Brightness = uint.Parse(Regex.Match(status, @"\d+").Value, NumberFormatInfo.InvariantInfo);
             }
+
+            changeTimer.Interval = TimeSpan.FromMilliseconds(200);
+            changeTimer.Tick += changeTimer_Tick;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -137,65 +175,61 @@ namespace Woning {
                     await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=On");
                 }
             }
+            changeMode = ChangeMode.switchMode;
         }
-        //public void SetColor(float r, float g, float b) { if (ColorLamp) { Color[0] = r; Color[1] = g; Color[2] = b; } }
+
+        public void SetStatus(uint status) {
+            if (status == 0) {
+                if (Status) Status = false;
+            } else {
+                if (!Status) Status = true;
+            }
+        }
 
         public void SetStatus(uint status, uint brightness) {
             if(status == 0) {
                 if (Status) {
-                    if (Dimmable) Brightness = 0;
+                    Brightness = 0;
                     Status = false;
                 }
             } else {
                 if (!Status || Brightness != brightness) {
-                    if (Dimmable) Brightness = brightness;
+                    Brightness = brightness;
                     Status = true;
+                }
+            }
+        }
+
+        public void SetStatus(uint status, uint brightness, byte r, byte g, byte b) {
+            Color newColor = Color.FromArgb(255, r, g, b);
+            if (status == 0) {
+                if (Status) {
+                    Brightness = 0;
+                    Status = false;
+                }
+            } else {
+                if (!Status || Brightness != brightness || LampColor != newColor) {
+                    Brightness = brightness;
+                    Status = true;
+                    LampColor = newColor;
                 }
             }
         }
 
         public void SetColor(ColorPicker sender, ColorChangedEventArgs args) {
             LampColor = args.NewColor;
+            changeMode = ChangeMode.colorMode;
+            changeTimer.Start();
         }
 
-        public async void UpdateColor(object sender, ManipulationCompletedRoutedEventArgs e) {
-            string hex = LampColor.ToString().Substring(3, 6);
-            Debug.WriteLine(hex);
-            if(Brightness == 0) {
-                Status = true;
-                Brightness = 100;
-            }
-            await GetAsync($"http://192.168.2.210/json.htm?type=command&param=setcolbrightnessvalue&idx={IDX}&hex={hex}&brightness={Brightness}&iswhite=false");
-        }
-
-        public async void SetBrightnessSlide(object sender, ManipulationCompletedRoutedEventArgs e) {
+        public void SetBrightnessSlide(object sender, RangeBaseValueChangedEventArgs e) {
             Slider slider = sender as Slider;
-            if (slider.Value == 0) {
-                if (Status) {
-                    Status = false;
-                }
-            } else {
-                if (!Status) {
-                    Status = true;
-                }
-            }
             Brightness = (uint)slider.Value;
-            await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level={(uint)slider.Value}");
-        }
-
-        public async void SetBrightnessTapped(object sender, RangeBaseValueChangedEventArgs e) {
-            if(Math.Abs(e.NewValue - e.OldValue) > 10) {
-                if (e.NewValue == 0) {
-                    if (Status) {
-                        Status = false;
-                    }
-                } else {
-                    if (!Status) {
-                        Status = true;
-                    }
-                }
-                Brightness = (uint)e.NewValue;
-                await GetAsync($"http://192.168.2.210/json.htm?type=command&param=switchlight&idx={IDX}&switchcmd=Set%20Level&level={(uint)e.NewValue}");
+            if (changeMode != ChangeMode.switchMode) {
+                changeMode = ChangeMode.brighnessMode;
+                changeTimer.Start();
+            } else {
+                changeMode = ChangeMode.none;
             }
         }
     }

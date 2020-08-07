@@ -9,7 +9,7 @@
   <Identity
     Name="a7df935b-311f-44ab-8f20-b66ee5f55cc6"
     Publisher="CN=Jasper"
-    Version="1.0.0.0" />
+    Version="0.1.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="a7df935b-311f-44ab-8f20-b66ee5f55cc6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
